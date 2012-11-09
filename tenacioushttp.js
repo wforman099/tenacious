@@ -167,7 +167,7 @@ __.prototype.recover = function() {
     if(this.reconnectAttempts > 0) {
         return Q.reject('already attempting to reconnect'); //reject or resolve?
     }
-    this.request = undefined; //signifies a new request needs be created
+    this.request = undefined;
     this.connectionState = 'reconnecting';
     this.reconnectAttempts = 0;
     this._reconnect(d);
