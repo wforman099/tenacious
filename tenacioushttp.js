@@ -1,4 +1,5 @@
 /**
+ * Node module to tenaciously maintain HTTP client connections for real-time streaming.
  * User: wadeforman
  * Date: 11/7/12
  * Time: 2:03 PM
@@ -57,19 +58,19 @@ __.prototype.start = function() {
     var d = Q.defer();
     var errorMessage = '';
     var self = this;
-    this.pendingStop = false;
 
     if(this.isWritable()) {
         //we already have a open connection
         return Q.resolve();
     }
 
+    this.pendingStop = false;
     this.connectionState = 'connecting';
 
     options = parseUrl(this.host);
     options.port = this.port;
     options.method = 'GET';
-    options.headers = this.header;//todo handle keep-alive and chunked headers
+    options.headers = this.header;
 
     this.request = http.request(options, function (response) {
         response.setEncoding('utf-8');
@@ -162,10 +163,10 @@ __.prototype.write = function(content) {
 __.prototype.recover = function() {
     var d = Q.defer();
     if(this.pendingStop){
-        return Q.reject('will not recover when there is a pending shut down');
+        return Q.reject('will not recover when there is a pending stop');
     }
     if(this.reconnectAttempts > 0) {
-        return Q.reject('already attempting to reconnect'); //reject or resolve?
+        return Q.reject('already attempting to reconnect');
     }
     this.request = undefined;
     this.connectionState = 'reconnecting';
