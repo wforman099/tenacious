@@ -194,10 +194,11 @@ exports['start'] = {
 
     'will resolve if there is already a request' : function(test) {
         var p = Tenacious.create('http://localhost/',1333, this.headers);
-        //p.request = {};
+
         p.isWritable = function() {
             return true;
-        }
+        };
+
         test.expect(1);
 
         p.start().then(
@@ -247,7 +248,7 @@ exports['stop'] = {
         ).done();
     },
 
-    'will reject if there is no connect to stop' : function(test) {
+    'will reject if there is no connection to stop' : function(test) {
         var p = Tenacious.create('http://127.0.0.1/',1333);
         test.expect(1);
         p.stop('ending message').then(
@@ -295,7 +296,6 @@ exports['reconnect'] = {
 
         p._reconnect().then(
             function(r){
-                //test.notEqual(r, undefined);
                 test.ok(true);
                 test.done();
             }, function(err) {
@@ -308,7 +308,6 @@ exports['reconnect'] = {
 
 exports['recover'] = {
     'success' : function(test) {
-        //calls reconnect and returns a promise
         var p = Tenacious.create('http://127.0.0.1/',1333);
 
         p._reconnect = function(d) {
