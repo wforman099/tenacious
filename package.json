@@ -2,12 +2,16 @@
     "name": "tenacioushttp",
     "version": "0.0.2",
     "description": "a streaming http connection which will attempt to reconnect whenever the stream lost",
-    "main": "tenacioushttp.js",
+    "main": "tenacioushttp",
     "keywords": [
         "streaming",
         "http",
         "reconnect"
     ],
+    "repository": {
+        "type": "git",
+        "url": "http://github.com/LocalResponse/tenacious.git"
+    },
     "dependencies": {
         "q": ""
     }
