@@ -78,3 +78,8 @@ Emits when there was no data transferred over the underlying socket for the http
 over the specific timeout period (defaults to 60 seconds).
 Note that tenaciousHttp calls 'recover()' whenever a socket timeout occurs.
 
+###recovered(reason [optional])
+Emits after the recover call is successful.
+The consumer should do any post connection work on this event.
+
+

@@ -1,6 +1,6 @@
 {
     "name": "tenacioushttp",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "a streaming http connection which will attempt to reconnect whenever the stream lost",
     "main": "tenacioushttp.js",
     "keywords": [

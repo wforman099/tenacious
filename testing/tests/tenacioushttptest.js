@@ -64,34 +64,41 @@ exports['start'] = {
             });
         }).listen(1333, '127.0.0.1');
 
-        test.expect(5);
+        test.expect(8);
 
-        var p = Tenacious.create('http://localhost/',1333, this.headers);
-        p.recover = function (){
+        var t = Tenacious.create('http://localhost/',1333, this.headers);
+        t.recover = function (){
+            test.ok(true);
             return Q.resolve();
         };
 
-        p.on('data', function(chunk, statusCode){
+        t.on('data', function(chunk, statusCode){
             test.equal(chunk, 'response');
             test.equal(statusCode, 200);
         });
 
-        p.on('end', function(statusCode){
+        t.on('recovered', function(mess){
+            test.equal(mess, 'server end');
+            test.done();
+        });
+
+        t.on('end', function(statusCode){
             test.equal(statusCode, 200);
         });
 
-        p.start().then(
+        t.start().then(
             function(r) {
+                test.equal(t.connectionState, 'connected');
                 test.ok(true);
                 server.close();
-                test.done();
+
             }, function (err) {
                 server.close();
                 test.done();
             }
         ).done();
 
-        p.write('written value1');
+        t.write('written value1');
     },
 
     'handles non-200 status codes' : function(test) {
@@ -106,12 +113,12 @@ exports['start'] = {
             });
         }).listen(1333, '127.0.0.1');
 
-        var p = Tenacious.create('http://localhost/',1333, this.headers);
-        p.recover = function (){
+        var t = Tenacious.create('http://localhost/',1333, this.headers);
+        t.recover = function (){
             return Q.resolve();
         };
 
-        p.start().then( //connects to the remote server.  returns a promise
+        t.start().then( //connects to the remote server.  returns a promise
             function(r) {
                 server.close();
                 test.ok(false);
@@ -123,18 +130,25 @@ exports['start'] = {
             }
         ).done();
 
-        p.write('written value1');
+        t.write('written value1');
     },
 
-    'will reject on socket timeout' : function (test) {
+    'will reject on socket timeout and recover' : function (test) {
 
-        var p = Tenacious.create('http://localhost/',1333,this.headers);
+        var t = Tenacious.create('http://localhost/',1333,this.headers);
         Tenacious.SOCKET_TIMEOUT = 1;
-        test.expect(1);
-        p.recover = function (){
+        test.expect(3);
+
+        t.recover = function (){
+            test.ok(true);
             return Q.resolve();
         };
-        p.start().then(
+
+        t.on('recovered', function(message){
+            test.equal(message, 'timeout');
+        });
+
+        t.start().then(
             function () {
                 test.ok(false);
                 test.done();
@@ -144,7 +158,7 @@ exports['start'] = {
             }).done();
     },
 
-    'will emit a disconnected event on socket timeout' : function (test) {
+    'will emit a recovered event on socket timeout' : function (test) {
         var server = http.createServer(function (req, res) {
             req.setEncoding('utf-8');
             req.on('data', function(chunk) {
@@ -153,19 +167,19 @@ exports['start'] = {
             });
         }).listen(1333, '127.0.0.1');
         Tenacious.SOCKET_TIMEOUT = 100;
-        var p = Tenacious.create('http://localhost/',1333, this.headers);
+        var t = Tenacious.create('http://localhost/',1333, this.headers);
 
-        p.recover = function (){
+        t.recover = function (){
             return Q.resolve();
         };
 
-        p.on('timeout', function(){
-            test.ok(true);
+        t.on('recovered', function(message){
+            test.equal(message,'timeout');
             server.close();
             test.done();
         });
 
-        p.start().then(
+        t.start().then(
             function(r) {
                 test.ok(true);
             }, function(err) {
@@ -174,34 +188,40 @@ exports['start'] = {
                 test.done();
             }
         ).done();
-        p.write('written value1');
+        t.write('written value1');
     },
 
     'rejects when end point refuses the connection' : function (test) {
-        test.expect(1);
-        var p = Tenacious.create('http://localhost/',1333, this.headers);
-        p.recover = function (){
+        test.expect(3);
+        var t = Tenacious.create('http://localhost/',1333, this.headers);
+        t.recover = function (){
+            test.ok(true);
             return Q.resolve();
         };
-        p.start().then(function(){
+
+        t.on('recovered', function(mess){
+            test.equal(mess, 'connection closed with error');
+            test.done();
+        });
+
+        t.start().then(function(){
             test.ok(false);
             test.done();
         }, function (err)  {
             test.ok(true);
-            test.done();
         }).done();
     },
 
     'will resolve if there is already a request' : function(test) {
-        var p = Tenacious.create('http://localhost/',1333, this.headers);
+        var t = Tenacious.create('http://localhost/',1333, this.headers);
 
-        p.isWritable = function() {
+        t.isWritable = function() {
             return true;
         };
 
         test.expect(1);
 
-        p.start().then(
+        t.start().then(
             function() {
                 test.ok(true);
                 test.done();
@@ -212,14 +232,14 @@ exports['start'] = {
 
 exports['stop'] = {
     'success' : function(test) {
-        var p = Tenacious.create('http://127.0.0.1/',1333);
-        p.connectionState = 'connected';
-        p.request = {};
-        p.request.end = function(contents) {
+        var t = Tenacious.create('http://127.0.0.1/',1333);
+        t.connectionState = 'connected';
+        t.request = {};
+        t.request.end = function(contents) {
             test.ok(true);
         };
         test.expect(2);
-        p.stop().then(
+        t.stop().then(
             function() {
                 test.ok(true);
                 test.done();
@@ -230,14 +250,14 @@ exports['stop'] = {
         ).done();
     },
     'still end connection with message' : function(test) {
-        var p = Tenacious.create('http://127.0.0.1/',1333);
-        p.request = {};
-        p.connectionState = 'connected';
-        p.request.end = function(contents) {
+        var t = Tenacious.create('http://127.0.0.1/',1333);
+        t.request = {};
+        t.connectionState = 'connected';
+        t.request.end = function(contents) {
             test.equal(contents, 'ending message');
         };
         test.expect(2);
-        p.stop('ending message').then(
+        t.stop('ending message').then(
             function() {
                 test.ok(true);
                 test.done();
@@ -249,9 +269,9 @@ exports['stop'] = {
     },
 
     'will reject if there is no connection to stop' : function(test) {
-        var p = Tenacious.create('http://127.0.0.1/',1333);
+        var t = Tenacious.create('http://127.0.0.1/',1333);
         test.expect(1);
-        p.stop('ending message').then(
+        t.stop('ending message').then(
             function() {
                 test.ok(false);
                 test.done();
@@ -265,36 +285,36 @@ exports['stop'] = {
 
 exports['write'] = {
     'success' : function(test) {
-        var p = Tenacious.create('http://127.0.0.1/',1333);
-        p.request = {};
-        p.isWritable = function(){
+        var t = Tenacious.create('http://127.0.0.1/',1333);
+        t.request = {};
+        t.isWritable = function(){
             return true;
         };
-        p.request.write = function(contents) {
+        t.request.write = function(contents) {
             test.equal(contents, 'test');
         };
         test.expect(1);
-        p.write('test');
+        t.write('test');
         test.done();
     }
 }
 
 exports['reconnect'] = {
     'success' : function(test){
-        var p = Tenacious.create('http://127.0.0.1/',1333);
-        p._calculateReconnectDelay = function() {
+        var t = Tenacious.create('http://127.0.0.1/',1333);
+        t._calculateReconnectDelay = function() {
             test.ok(true);
             return 0;
         };
 
-        p.start = function () {
+        t.start = function () {
             test.ok(true);
             return Q.resolve({});
         };
 
         test.expect(3);
 
-        p._reconnect().then(
+        t._reconnect().then(
             function(r){
                 test.ok(true);
                 test.done();
@@ -308,13 +328,13 @@ exports['reconnect'] = {
 
 exports['recover'] = {
     'success' : function(test) {
-        var p = Tenacious.create('http://127.0.0.1/',1333);
+        var t = Tenacious.create('http://127.0.0.1/',1333);
 
-        p._reconnect = function(d) {
+        t._reconnect = function(d) {
             return d.resolve({});
         };
 
-        p.recover().then(
+        t.recover().then(
             function(r){
                 test.done();
             }, function(err) {
@@ -325,18 +345,18 @@ exports['recover'] = {
     },
 
     'will attempt to recover again if it fails to reconnect' : function(test) {
-        var p = Tenacious.create('http://127.0.0.1/',1333);
+        var t = Tenacious.create('http://127.0.0.1/',1333);
         test.expect(10);
-        p.start = function () {
+        t.start = function () {
             test.ok(true);
             return Q.reject();
         };
 
-        p._calculateReconnectDelay = function () {
+        t._calculateReconnectDelay = function () {
             test.ok(true);
-            ++p.reconnectAttempts;
-            if(p.reconnectAttempts >= 5) {
-                p.start = function() {
+            ++t.reconnectAttempts;
+            if(t.reconnectAttempts >= 5) {
+                t.start = function() {
                     test.ok(true);
                     return Q.resolve({});
                 };
@@ -345,7 +365,7 @@ exports['recover'] = {
             return 0;
         };
 
-        p.recover().then(
+        t.recover().then(
             function(r) {
                 test.done();
             }, function(err) {
@@ -356,11 +376,11 @@ exports['recover'] = {
     },
 
     'will reject if already attempting to reconnect' : function(test) {
-        var p = Tenacious.create('http://127.0.0.1/',1333);
-        p.reconnectAttempts = 1;
+        var t = Tenacious.create('http://127.0.0.1/',1333);
+        t.reconnectAttempts = 1;
         test.expect(1);
 
-        p.recover().then(
+        t.recover().then(
             function() {
                 test.ok(false);
                 test.done();
@@ -372,10 +392,10 @@ exports['recover'] = {
     },
 
     'will reject if there is a pending stop' : function(test) {
-        var p = Tenacious.create('http://127.0.0.1/',1333);
-        p.pendingStop = true;
+        var t = Tenacious.create('http://127.0.0.1/',1333);
+        t.pendingStop = true;
 
-        p.recover().then(
+        t.recover().then(
             function(){
                 test.ok(false);
                 test.done();
@@ -389,19 +409,19 @@ exports['recover'] = {
 
 exports['calculateReconnectionDelay'] = {
     'will calculate reconnect timer' : function(test) {
-        var p = Tenacious.create('http://127.0.0.1/',1333);
+        var t = Tenacious.create('http://127.0.0.1/',1333);
 
-        test.equal(p._calculateReconnectDelay(), 0);
-        test.equal(p.reconnectAttempts, 1);
+        test.equal(t._calculateReconnectDelay(), 0);
+        test.equal(t.reconnectAttempts, 1);
 
-        test.equal(p._calculateReconnectDelay(), 10000);
-        test.equal(p.reconnectAttempts, 2);
+        test.equal(t._calculateReconnectDelay(), 10000);
+        test.equal(t.reconnectAttempts, 2);
 
-        p.reconnectAttempts = 3
-        test.equal(p._calculateReconnectDelay(), 40000);
+        t.reconnectAttempts = 3
+        test.equal(t._calculateReconnectDelay(), 40000);
 
-        p.reconnectAttempts = 1000;
-        test.equal(p._calculateReconnectDelay(), 320000);
+        t.reconnectAttempts = 1000;
+        test.equal(t._calculateReconnectDelay(), 320000);
 
         test.done();
     }
@@ -409,15 +429,15 @@ exports['calculateReconnectionDelay'] = {
 
 exports['isStarted'] = {
     'returns true if start has already resolved' : function(test) {
-        var p = Tenacious.create('http://127.0.0.1/',1333);
-        test.equal(p.isWritable(), false);
+        var t = Tenacious.create('http://127.0.0.1/',1333);
+        test.equal(t.isWritable(), false);
         test.done();
     },
 
     'return false if start has not already been called' : function(test) {
-        var p = Tenacious.create('http://127.0.0.1/',1333);
-        p.connectionState = 'connected';
-        test.equal(p.isWritable(), true);
+        var t = Tenacious.create('http://127.0.0.1/',1333);
+        t.connectionState = 'connected';
+        test.equal(t.isWritable(), true);
         test.done();
     }
 }

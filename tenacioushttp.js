@@ -89,10 +89,12 @@ __.prototype.start = function() {
 
             response.on('end', function() {
                 self.emit('end', response.statusCode);
-
-                self.recover();
+                self.recover().then(
+                    function(){
+                        self.emit('recovered', 'server end');
+                    });
             });
-            this.connectionState = 'connected';
+            self.connectionState = 'connected';
             d.resolve();
         }
     });
@@ -102,14 +104,19 @@ __.prototype.start = function() {
         socket.setTimeout(__.SOCKET_TIMEOUT);
 
         socket.on('timeout', function() {
-            self.emit('timeout');  //promise already resolved
-            self.recover();
+            self.recover().then(
+                function(){
+                    self.emit('recovered', 'timeout');
+                });
             socket.destroy();
         });
 
         socket.on('close', function (hasError) {
             if(hasError) {
-                self.recover();
+                self.recover().then(
+                    function(){
+                        self.emit('recovered', 'connection closed with error');
+                    });
                 socket.destroy();
             }
         });
