@@ -8,8 +8,8 @@ Note that this module is promise based (via the Q library) and event based (via 
 - node
 
 ##Install
-- npm install tenaciousHttp
-- `require('tenaciousHttp');`
+- npm install tenacious-http
+- `require('tenacious-http');`
 
 ##Use
 ###create(host, port, header, initFunction)
