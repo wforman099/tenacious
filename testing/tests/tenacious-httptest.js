@@ -6,7 +6,7 @@
 
 "use strict"
 
-var Tenacious = require('../../tenacioushttp');
+var Tenacious = require('../../tenacious-http');
 var http = require('http');
 var Q = require('q');
 
