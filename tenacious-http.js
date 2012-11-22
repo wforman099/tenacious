@@ -205,7 +205,7 @@ __.prototype._reconnect = function(deferred) {
     );
 };
 /**
- * calculates the required delay before attempting to connect to datasift (in ms)
+ * calculates the required delay before attempting to reconnect (in ms)
  * @return {Number}
  * @private
  */
