@@ -266,20 +266,6 @@ exports['stop'] = {
                 test.done();
             }
         ).done();
-    },
-
-    'will reject if there is no connection to stop' : function(test) {
-        var t = Tenacious.create('http://127.0.0.1/',1333);
-        test.expect(1);
-        t.stop('ending message').then(
-            function() {
-                test.ok(false);
-                test.done();
-            }, function(err){
-                test.ok(true);
-                test.done();
-            }
-        ).done();
     }
 }
 

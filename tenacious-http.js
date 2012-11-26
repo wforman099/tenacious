@@ -142,8 +142,6 @@ __.prototype.stop = function(message) {
         } else {
             this.request.end();
         }
-    } else {
-        return Q.reject('no connection running to stop');
     }
     this.request = undefined;
     return Q.resolve();
