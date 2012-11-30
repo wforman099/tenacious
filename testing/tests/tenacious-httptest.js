@@ -32,39 +32,32 @@ var Q = require('q');
 
 exports['create'] = {
     'success' : function(test) {
-        var header = {test:'123'};
-        var p = Tenacious.create('host',80, header);
-        test.equal(p.host, 'host');
-        test.equal(p.port, 80);
-        test.deepEqual(p.header,{test:'123'});
-        test.done();
-    },
-
-    'requires host as a parameter' : function(test) {
-        test.throws(
-            function(){
-                Tenacious.create();
-            }, Error);
-        test.done();
-    },
-
-    'requires port as a parameter' : function(test) {
-        test.throws(
-            function(){
-                Tenacious.create('host');
-            }, Error);
+        var headers = {test:'123'};
+        var opts = {
+            host: 'test host',
+            headers: headers,
+            auth: this.username + ':' + this.apiKey
+        };
+        var p = Tenacious.create(opts);
+        test.deepEqual(p.opts,opts);
         test.done();
     }
 }
 
 exports['start'] = {
     setUp : function(cb) {
-        this.headers = {
+        var headers = {
             'User-Agent'        : 'agent',
-            'Host'              : 'http://localhost/',
+            'Host'              : 'localhost',
             'Connection'        : 'Keep-Alive',
             'Transfer-Encoding' : 'chunked',
             'Authorization'     : 'abc123:123'
+        };
+        this.opts = {
+            host: 'localhost',
+            port : 1333,
+            headers: headers,
+            auth: 'abc123:123'
         };
         cb();
     },
@@ -86,7 +79,7 @@ exports['start'] = {
 
         test.expect(8);
 
-        var t = Tenacious.create('http://localhost/',1333, this.headers);
+        var t = Tenacious.create(this.opts);
         t.recover = function (){
             test.ok(true);
             return Q.resolve();
@@ -97,7 +90,7 @@ exports['start'] = {
             test.equal(statusCode, 200);
         });
 
-        t.on('recovered', function(mess){
+        t.on('recovered', function(mess) {
             test.equal(mess, 'server end');
             test.done();
         });
@@ -133,7 +126,7 @@ exports['start'] = {
             });
         }).listen(1333, '127.0.0.1');
 
-        var t = Tenacious.create('http://localhost/',1333, this.headers);
+        var t = Tenacious.create(this.opts);
         t.recover = function (){
             return Q.resolve();
         };
@@ -155,7 +148,7 @@ exports['start'] = {
 
     'will reject on socket timeout and recover' : function (test) {
 
-        var t = Tenacious.create('http://localhost/',1333,this.headers);
+        var t = Tenacious.create(this.opts);
         Tenacious.SOCKET_TIMEOUT = 1;
         test.expect(3);
 
@@ -187,7 +180,8 @@ exports['start'] = {
             });
         }).listen(1333, '127.0.0.1');
         Tenacious.SOCKET_TIMEOUT = 100;
-        var t = Tenacious.create('http://localhost/',1333, this.headers);
+
+        var t = Tenacious.create(this.opts);
 
         t.recover = function (){
             return Q.resolve();
@@ -213,7 +207,8 @@ exports['start'] = {
 
     'rejects when end point refuses the connection' : function (test) {
         test.expect(3);
-        var t = Tenacious.create('http://localhost/',1333, this.headers);
+
+        var t = Tenacious.create(this.opts);
         t.recover = function (){
             test.ok(true);
             return Q.resolve();

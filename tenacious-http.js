@@ -29,10 +29,10 @@
 
 
 "use strict"
+
 var Q = require('q');
 var http = require('http');
 var EventEmitter = require('events').EventEmitter;
-var parseUrl = require('url').parse;
 
 var __ = function(){
 
@@ -40,31 +40,19 @@ var __ = function(){
 
 /**
  * creates an instance of tenaciousHttp
- * @param host -  end point to connect to
- * @param port - port of the end point to connect to
- * @param header - custom header
+ * @param opts - options passed into an http request
  * @param init - function which is called after the initial request or subsequent reconnect is made
  * @return {Object tenaciousHttp}
  */
-__.create = function (host, port, header, init) {
+__.create = function (opts, init) {
     var instance = new __();
-    if(host) {
-        instance.host = host;
-    } else {
-        throw new Error('host is a required parameter');
-    }
 
-    if(port) {
-        instance.port = port;
-    } else {
-        throw new Error('port is a require parameter');
-    }
-
-    instance.header = header;
+    instance.opts = opts;
     instance.reconnectAttempts = 0;
     instance.connectionState = 'disconnected';
-    instance.init = init || function(){};
+    instance.init = init || function(client){};
     instance.pendingStop = false;
+
     return instance;
 };
 
@@ -76,7 +64,7 @@ __.SOCKET_TIMEOUT = 60000;
  * @return {Promise}
  */
 __.prototype.start = function() {
-    var options;
+
     var d = Q.defer();
     var errorMessage = '';
     var self = this;
@@ -89,12 +77,9 @@ __.prototype.start = function() {
     this.pendingStop = false;
     this.connectionState = 'connecting';
 
-    options = parseUrl(this.host);
-    options.port = this.port;
-    options.method = 'GET';
-    options.headers = this.header;
+    this.opts.method = 'GET';
 
-    this.request = http.request(options, function (response) {
+    this.request = http.request(this.opts, function (response) {
         response.setEncoding('utf-8');
         if(response.statusCode !== 200) {
             response.on('data', function(chunk){
@@ -147,7 +132,7 @@ __.prototype.start = function() {
     this.request.on('error', function(err) {
         d.reject(err);
     });
-    this.init();
+    this.init(this);
     return d.promise;
 };
 
