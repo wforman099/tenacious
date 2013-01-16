@@ -253,7 +253,12 @@ exports['stop'] = {
         t.request.end = function(contents) {
             test.ok(true);
         };
-        test.expect(2);
+
+        t.request.removeAllListeners = function() {
+            test.ok(true);
+        };
+
+        test.expect(3);
         t.stop().then(
             function() {
                 test.ok(true);
@@ -271,7 +276,12 @@ exports['stop'] = {
         t.request.end = function(contents) {
             test.equal(contents, 'ending message');
         };
-        test.expect(2);
+
+        t.request.removeAllListeners = function() {
+            test.ok(true);
+        };
+
+        test.expect(3);
         t.stop('ending message').then(
             function() {
                 test.ok(true);
@@ -438,7 +448,15 @@ exports['isStarted'] = {
     'return false if start has not already been called' : function(test) {
         var t = Tenacious.create('http://127.0.0.1/',1333);
         t.connectionState = 'connected';
+        t.request = {};
         test.equal(t.isWritable(), true);
+        test.done();
+    },
+
+    'returns false when there is a undefined request ' : function(test) {
+        var t = Tenacious.create('http://127.0.0.1/',1333);
+        t.connectionState = 'connected';
+        test.equal(t.isWritable(), false);
         test.done();
     }
 }
