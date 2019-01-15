@@ -1,21 +1,21 @@
-#TenaciousHttp
+# TenaciousHttp
 
 This library creates a streaming node Http connection which will automatically attempt recover from disconnect events.
 
 Note that this module is promise based (via the Q library) and event based (via the EventEmitter)
 
-##Prerequisites
+## Prerequisites
 - node
 
-##Install
+## Install
 - npm install tenacious-http
 - `require('tenacious-http');`
 
-##Use
-###create(host, port, header, initFunction)
+## Use
+### create(host, port, header, initFunction)
     //create a tenaciousHttp instance via the static factory
     var tenacious = Tenacious.create('HTTP_HOST', HOST_PORT, HTTP_HEADER_OBJECT, INIT_FUNCTION [optional]);
-###SOCKET_TIMEOUT
+### SOCKET_TIMEOUT
 SOCKET_TIMEOUT is a static variable.
 If there is no activity between the http connection and the client for SOCKET_TIME (in ms),
 then the connection is closed and 'recover()' is called.
@@ -25,7 +25,7 @@ A timeout event will be emitted when a timeout occurs.
 
     Tenacious.SOCKET_TIMEOUT = 30000; //changes the timeout to 30 seconds.
     Tenacious.SOCKET_TIMEOUT = 0; //sets the socket to never timeout
-###start()
+### start()
 Starts an http connection, returning a promise.
 
     tenacious.start().then(
@@ -34,7 +34,7 @@ Starts an http connection, returning a promise.
         } , function(err) {
             //start had error 'err'
         });
-###stop(message [optional])
+### stop(message [optional])
 Stops the streaming http connection, returning a promise.
 
     tenacious.stop().then(
@@ -44,11 +44,11 @@ Stops the streaming http connection, returning a promise.
             //stop had error 'err'
         });
 
-###write(message)
+### write(message)
 Writes a messages to the host.
 
     tenacious.write('message to write to the host');
-###recover()
+### recover()
 Attempts to reconnect the host, returning a promise.
 call this when the for application level error cases.
 
@@ -58,27 +58,27 @@ call this when the for application level error cases.
         }, function(err) {
             //failed to recover
         });
-###isWritable()
+### isWritable()
 Returns true if the state of the http connection is writable.
     if(tenacious.isWritable()){
         //tenacious.write('foo');  will work
     }
 
-##events emitted
+## events emitted
 
-###data(chunk, statusCode)
+### data(chunk, statusCode)
 Emits the data coming in to the Http connection, with its status code.
 
-###end(statusCode)
+### end(statusCode)
 Emits an end once the host sends an end to the http client, with its status code.
 Note that tenaciousHttp calls 'recover()' once it receives an end from the host.
 
-###timeout
+### timeout
 Emits when there was no data transferred over the underlying socket for the http connection
 over the specific timeout period (defaults to 60 seconds).
 Note that tenaciousHttp calls 'recover()' whenever a socket timeout occurs.
 
-###recovered(reason [optional])
+### recovered(reason [optional])
 Emits after the recover call is successful.
 The consumer should do any post connection work on this event.
 
